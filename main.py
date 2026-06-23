@@ -44,7 +44,7 @@ def check_rate_limit(ip: str) -> bool:
 # Serving index.html directly on root
 @app.route("/")
 def get_index():
-    return send_from_directory('static', 'index.html')
+    return app.send_static_file('index.html')
 
 # CORS Header helper (since flask_cors is not installed to keep dependencies minimal)
 @app.after_request
@@ -144,12 +144,13 @@ def send_message():
                 "session_id": (None, session_id),
                 "user_name": (None, user_name),
                 "chatId": (None, session_id),
+                "order_status": (None, "")
             }
             
             auth = (N8N_USERNAME, N8N_PASSWORD) if N8N_USERNAME and N8N_PASSWORD else None
             
             # Send sync POST with timeout as multipart/form-data
-            response = httpx.post(N8N_WEBHOOK_URL, files=files, auth=auth, timeout=20.0)
+            response = httpx.post(N8N_WEBHOOK_URL, files=files, auth=auth, timeout=60.0)
             
             if response.status_code in [200, 201]:
                 n8n_data = response.json()
@@ -237,4 +238,5 @@ def send_message():
     })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, debug=True)
