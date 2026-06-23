@@ -113,10 +113,7 @@ from dotenv import load_dotenv
 import httpx
 
 load_dotenv()
-# Always use production webhook (not webhook-test which requires editor to be open)
-N8N_WEBHOOK_URL_RAW = os.getenv("N8N_WEBHOOK_URL", "https://sunbv56.app.n8n.cloud/webhook/bookmedi-webhook")
-# Strip '-test' from URL if accidentally using test webhook
-N8N_WEBHOOK_URL = N8N_WEBHOOK_URL_RAW.replace("/webhook-test/", "/webhook/")
+N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL", "https://sunbv56.app.n8n.cloud/webhook/bookmedi-webhook")
 N8N_USERNAME = os.getenv("N8N_USERNAME")
 N8N_PASSWORD = os.getenv("N8N_PASSWORD")
 
