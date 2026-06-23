@@ -225,15 +225,20 @@ document.addEventListener("DOMContentLoaded", () => {
         showTypingIndicator();
 
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout
+
             const response = await fetch(`${API_BASE}/api/chat/message`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                signal: controller.signal,
                 body: JSON.stringify({
                     session_id: sessionId,
                     message: text,
                     user_name: userData ? userData.name : null
                 })
             });
+            clearTimeout(timeoutId);
 
             removeTypingIndicator();
 
@@ -298,7 +303,11 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             removeTypingIndicator();
             console.error("Message send error:", error);
-            appendMessage("bot", "Hệ thống gặp sự cố kết nối. Vui lòng kiểm tra lại localhost server.");
+            if (error.name === 'AbortError') {
+                appendMessage("bot", "⚠️ **Hệ thống phản hồi chậm**: AI Agent đang cần thêm thời gian xử lý yêu cầu của bạn. Vui lòng thử lại sau vài giây hoặc kiểm tra trạng thái luồng n8n.");
+            } else {
+                appendMessage("bot", "Hệ thống gặp sự cố kết nối. Vui lòng kiểm tra lại localhost server.");
+            }
         }
     }
 
