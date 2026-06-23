@@ -150,7 +150,7 @@ def send_message():
             auth = (N8N_USERNAME, N8N_PASSWORD) if N8N_USERNAME and N8N_PASSWORD else None
             
             # Send sync POST with timeout as multipart/form-data
-            response = httpx.post(N8N_WEBHOOK_URL, files=files, auth=auth, timeout=60.0)
+            response = httpx.post(N8N_WEBHOOK_URL, files=files, auth=auth, timeout=180.0)
             
             if response.status_code in [200, 201]:
                 n8n_data = response.json()

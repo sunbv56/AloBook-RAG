@@ -226,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout
+            const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutes timeout
 
             const response = await fetch(`${API_BASE}/api/chat/message`, {
                 method: "POST",
