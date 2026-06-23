@@ -152,8 +152,8 @@ def send_message():
             
             auth = (N8N_USERNAME, N8N_PASSWORD) if N8N_USERNAME and N8N_PASSWORD else None
             
-            # Send sync POST with timeout 25s (Cloudflare n8n.cloud kills at ~100s, keep well under)
-            response = httpx.post(N8N_WEBHOOK_URL, files=files, auth=auth, timeout=25.0)
+            # Send sync POST with timeout 60s (n8n takes ~26s, Cloudflare kills at ~100s)
+            response = httpx.post(N8N_WEBHOOK_URL, files=files, auth=auth, timeout=60.0)
             
             if response.status_code in [200, 201]:
                 n8n_data = response.json()
