@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AloBook.vn - Admin Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+            --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #ec4899 100%);
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --bg-card: rgba(30, 27, 75, 0.4);
+            --bg-input: rgba(15, 23, 42, 0.6);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-light: #ffffff;
+            --text-muted: #94a3b8;
+            --success-color: #10b981;
+            --pending-color: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Login Overlay */
+        .login-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .login-card {
+            background: rgba(30, 27, 75, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-card .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo span.gradient {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-card h3 {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 2.8rem;
+            border-radius: 8px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .error-msg {
+            color: #f43f5e;
+            font-size: 0.85rem;
+            margin-top: 0.8rem;
+            display: none;
+        }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 2rem;
+            min-height: 100vh;
+            display: none;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header .brand {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        header .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn-logout {
+            background: rgba(244, 63, 94, 0.2);
+            color: #f43f5e;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: #f43f5e;
+            color: var(--text-light);
+        }
+
+        /* Grid stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-info h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.15);
+            color: #6366f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .stat-icon.red {
+            background: rgba(244, 63, 94, 0.15);
+            color: #f43f5e;
+        }
+
+        /* Content Area */
+        .main-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.2);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-light);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--text-light);
+            background: var(--primary-gradient);
+        }
+
+        /* Actions bar */
+        .actions-bar {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .search-box input {
+            padding: 0.5rem 0.8rem 0.5rem 2.2rem;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-light);
+            outline: none;
+            width: 200px;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            width: 250px;
+            border-color: #6366f1;
+        }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+            padding: 0.5rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Table Area */
+        .table-wrapper {
+            flex: 1;
+            overflow-x: auto;
+            max-height: 500px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.88rem;
+        }
+
+        th {
+            background: rgba(15, 23, 42, 0.3);
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            user-select: none;
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 50px;
+            display: inline-block;
+        }
+
+        .badge.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--pending-color);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge.resolved {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-resolve {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-resolve:hover {
+            background: var(--success-color);
+            color: var(--text-light);
+        }
+
+        .loading-overlay {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 1rem;
+            }
+            .card-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .actions-bar {
+                justify-content: space-between;
+            }
+            .search-box input {
+                width: 100%;
+            }
+            .search-box input:focus {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <div class="logo">
+                <span class="gradient">AloBook</span><span style="color:#3b82f6">.vn</span>
+            </div>
+            <h3>Hệ thống quản trị AI Chatbot</h3>
+            <form id="loginForm">
+                <div class="input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="adminPassword" placeholder="Nhập mật khẩu Admin..." required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary">Đăng Nhập <i class="fa-solid fa-arrow-right-to-bracket" style="margin-left: 0.3rem;"></i></button>
+                <div class="error-msg" id="loginError">Mật khẩu không chính xác. Vui lòng thử lại.</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard Main Screen -->
+    <div class="dashboard-container" id="dashboardContainer">
+        <header>
+            <div class="brand">
+                <h1>AloBook.vn Dashboard 📊</h1>
+                <p>Quản lý khách hàng tiềm năng & Hỗ trợ kỹ thuật AI Chatbot</p>
+            </div>
+            <div class="header-actions">
+                <span id="adminStatus" style="font-size:0.85rem; color:var(--text-muted)"><i class="fa-solid fa-user-shield" style="color:#6366f1; margin-right: 0.3rem"></i> Admin Authorized</span>
+                <button class="btn-logout" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</button>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3 id="statTotalLeads">0</h3>
+                    <p>Khách hàng tiềm năng (Leads)</p>
+                </div>
+                <div class="stat-icon">
+                    <i class="fa-solid fa-address-book"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3 id="statPendingEscalations">0</h3>
+                    <p>Yêu cầu hỗ trợ đang chờ</p>
+                </div>
+                <div class="stat-icon red">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3 id="statResolvedEscalations">0</h3>
+                    <p>Yêu cầu đã xử lý</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(16,185,129,0.15); color:#10b981">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Workspace Card -->
+        <div class="main-card">
+            <div class="card-header">
+                <!-- Navigation Tabs -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-target="leads-panel"><i class="fa-solid fa-users"></i> Khách Hàng (Leads)</button>
+                    <button class="tab-btn" data-target="escalations-panel"><i class="fa-solid fa-envelope-open-text"></i> Phiên Cần Hỗ Trợ</button>
+                </div>
+                <!-- Search & Export Options -->
+                <div class="actions-bar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="tableSearch" placeholder="Tìm kiếm...">
+                    </div>
+                    <button class="btn-action" id="btnRefresh" title="Tải lại dữ liệu"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                    <button class="btn-action" id="btnExport" title="Xuất file CSV"><i class="fa-solid fa-file-csv"></i> Xuất CSV</button>
+                </div>
+            </div>
+
+            <!-- Leads Panel View -->
+            <div class="table-panel active" id="leads-panel">
+                <div class="table-wrapper">
+                    <table id="leadsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Họ và Tên</th>
+                                <th>Email</th>
+                                <th>Số điện thoại</th>
+                                <th>Thời gian gửi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadsTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Escalations Panel View -->
+            <div class="table-panel" id="escalations-panel" style="display:none">
+                <div class="table-wrapper">
+                    <table id="escalationsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Mã phiên chat (Session ID)</th>
+                                <th>Thời điểm yêu cầu</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="escalationsTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script logic -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const loginOverlay = document.getElementById("loginOverlay");
+            const loginForm = document.getElementById("loginForm");
+            const adminPassword = document.getElementById("adminPassword");
+            const loginError = document.getElementById("loginError");
+            const dashboardContainer = document.getElementById("dashboardContainer");
+            const logoutBtn = document.getElementById("logoutBtn");
+            
+            const leadsTableBody = document.getElementById("leadsTableBody");
+            const escalationsTableBody = document.getElementById("escalationsTableBody");
+            const btnRefresh = document.getElementById("btnRefresh");
+            const btnExport = document.getElementById("btnExport");
+            const tableSearch = document.getElementById("tableSearch");
+            
+            // Tab variables
+            const tabButtons = document.querySelectorAll(".tab-btn");
+            const tablePanels = document.querySelectorAll(".table-panel");
+
+            let currentTab = "leads-panel";
+            let cachedData = { leads: [], escalations: [] };
+
+            // Check if password stored in sessionStorage
+            let savedPassword = sessionStorage.getItem("admin_auth_pass");
+            if (savedPassword) {
+                attemptLoadDashboard(savedPassword);
+            }
+
+            // Handle login submit
+            loginForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+                const pass = adminPassword.value.trim();
+                attemptLoadDashboard(pass);
+            });
+
+            // Handle logout
+            logoutBtn.addEventListener("click", () => {
+                sessionStorage.removeItem("admin_auth_pass");
+                loginOverlay.style.display = "flex";
+                dashboardContainer.style.display = "none";
+                adminPassword.value = "";
+            });
+
+            // Switch Tabs
+            tabButtons.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    tabButtons.forEach(b => b.classList.remove("active"));
+                    tablePanels.forEach(p => p.style.display = "none");
+
+                    btn.classList.add("active");
+                    currentTab = btn.dataset.target;
+                    document.getElementById(currentTab).style.display = "block";
+                    tableSearch.value = "";
+                    renderTables();
+                });
+            });
+
+            // Load data
+            async function attemptLoadDashboard(password) {
+                try {
+                    const response = await fetch("/api/admin/data", {
+                        headers: { "X-Admin-Password": password }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        cachedData = data;
+                        sessionStorage.setItem("admin_auth_pass", password);
+                        
+                        // Hide login, show dashboard
+                        loginOverlay.style.display = "none";
+                        dashboardContainer.style.display = "flex";
+                        loginError.style.display = "none";
+                        
+                        // Update stats
+                        updateStats(data);
+                        renderTables();
+                    } else {
+                        loginError.style.display = "block";
+                        sessionStorage.removeItem("admin_auth_pass");
+                    }
+                } catch (err) {
+                    console.error("Dashboard load failed:", err);
+                    alert("Lỗi kết nối server backend.");
+                }
+            }
+
+            function updateStats(data) {
+                document.getElementById("statTotalLeads").innerText = data.leads.length;
+                
+                const pending = data.escalations.filter(e => e.status === 'pending').length;
+                const resolved = data.escalations.filter(e => e.status === 'resolved').length;
+                
+                document.getElementById("statPendingEscalations").innerText = pending;
+                document.getElementById("statResolvedEscalations").innerText = resolved;
+            }
+
+            // Render table lists
+            function renderTables() {
+                const searchVal = tableSearch.value.trim().toLowerCase();
+                
+                if (currentTab === "leads-panel") {
+                    let filteredLeads = cachedData.leads;
+                    if (searchVal) {
+                        filteredLeads = filteredLeads.filter(l => 
+                            l.name.toLowerCase().includes(searchVal) || 
+                            l.email.toLowerCase().includes(searchVal) || 
+                            l.phone.includes(searchVal)
+                        );
+                    }
+
+                    if (filteredLeads.length === 0) {
+                        leadsTableBody.innerHTML = `<tr><td colspan="5" class="empty-state"><i class="fa-solid fa-folder-open"></i> Không tìm thấy dữ liệu nào.</td></tr>`;
+                        return;
+                    }
+
+                    leadsTableBody.innerHTML = filteredLeads.map(l => {
+                        const formattedDate = new Date(l.created_at).toLocaleString('vi-VN');
+                        return `
+                            <tr>
+                                <td>${l.id}</td>
+                                <td><strong>${l.name}</strong></td>
+                                <td>${l.email}</td>
+                                <td>${l.phone}</td>
+                                <td>${formattedDate}</td>
+                            </tr>
+                        `;
+                    }).join("");
+
+                } else if (currentTab === "escalations-panel") {
+                    let filteredEscalations = cachedData.escalations;
+                    if (searchVal) {
+                        filteredEscalations = filteredEscalations.filter(e => 
+                            e.session_id.toLowerCase().includes(searchVal) || 
+                            e.status.toLowerCase().includes(searchVal)
+                        );
+                    }
+
+                    if (filteredEscalations.length === 0) {
+                        escalationsTableBody.innerHTML = `<tr><td colspan="5" class="empty-state"><i class="fa-solid fa-folder-open"></i> Không tìm thấy dữ liệu nào.</td></tr>`;
+                        return;
+                    }
+
+                    escalationsTableBody.innerHTML = filteredEscalations.map(e => {
+                        const formattedDate = new Date(e.timestamp * 1000).toLocaleString('vi-VN');
+                        const statusClass = e.status === 'pending' ? 'pending' : 'resolved';
+                        const statusLabel = e.status === 'pending' ? 'Đang chờ' : 'Đã xử lý';
+                        const actionBtn = e.status === 'pending' 
+                            ? `<button class="btn-resolve" data-id="${e.id}"><i class="fa-solid fa-check"></i> Hoàn thành</button>` 
+                            : `<span style="font-size:0.8rem; color:var(--text-muted)">Không có</span>`;
+                        
+                        return `
+                            <tr>
+                                <td>${e.id}</td>
+                                <td><code>${e.session_id}</code></td>
+                                <td>${formattedDate}</td>
+                                <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+                                <td>${actionBtn}</td>
+                            </tr>
+                        `;
+                    }).join("");
+
+                    // Attach resolve listeners
+                    escalationsTableBody.querySelectorAll(".btn-resolve").forEach(btn => {
+                        btn.addEventListener("click", async () => {
+                            const id = btn.dataset.id;
+                            await resolveEscalation(id);
+                        });
+                    });
+                }
+            }
+
+            // Resolve escalation action
+            async function resolveEscalation(id) {
+                const pass = sessionStorage.getItem("admin_auth_pass");
+                try {
+                    const response = await fetch(`/api/admin/escalations/${id}/resolve`, {
+                        method: "POST",
+                        headers: { "X-Admin-Password": pass }
+                    });
+                    
+                    if (response.ok) {
+                        // Refresh data
+                        await attemptLoadDashboard(pass);
+                    } else {
+                        alert("Không thể đánh dấu xử lý đơn.");
+                    }
+                } catch (err) {
+                    console.error("Resolve error:", err);
+                    alert("Lỗi kết nối server.");
+                }
+            }
+
+            // Search input filter event
+            tableSearch.addEventListener("input", renderTables);
+
+            // Refresh button
+            btnRefresh.addEventListener("click", () => {
+                const pass = sessionStorage.getItem("admin_auth_pass");
+                if (pass) attemptLoadDashboard(pass);
+            });
+
+            // Export to CSV
+            btnExport.addEventListener("click", () => {
+                if (currentTab === "leads-panel") {
+                    exportLeadsToCSV();
+                } else {
+                    exportEscalationsToCSV();
+                }
+            });
+
+            function exportLeadsToCSV() {
+                if (cachedData.leads.length === 0) {
+                    alert("Không có dữ liệu để xuất.");
+                    return;
+                }
+                let csvContent = "\uFEFFid,Name,Email,Phone,Created At\n";
+                cachedData.leads.forEach(l => {
+                    csvContent += `"${l.id}","${l.name}","${l.email}","${l.phone}","${l.created_at}"\n`;
+                });
+                downloadCSV(csvContent, "alobook_leads.csv");
+            }
+
+            function exportEscalationsToCSV() {
+                if (cachedData.escalations.length === 0) {
+                    alert("Không có dữ liệu để xuất.");
+                    return;
+                }
+                let csvContent = "\uFEFFid,Session ID,Timestamp,Status\n";
+                cachedData.escalations.forEach(e => {
+                    const dateStr = new Date(e.timestamp * 1000).toISOString();
+                    csvContent += `"${e.id}","${e.session_id}","${dateStr}","${e.status}"\n`;
+                });
+                downloadCSV(csvContent, "alobook_escalations.csv");
+            }
+
+            function downloadCSV(content, filename) {
+                const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = "hidden";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+    </script>
+</body>
+</html>

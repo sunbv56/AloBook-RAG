@@ -31,20 +31,20 @@ document.addEventListener("DOMContentLoaded", () => {
         sessionId = "sess_" + Math.random().toString(36).substring(2, 15);
         localStorage.setItem("alobook_chat_session", sessionId);
     }
-    
+
     let isLeadSubmitted = localStorage.getItem("alobook_lead_submitted") === "true";
     let userData = JSON.parse(localStorage.getItem("alobook_user_data") || "null");
 
     // Toggle Chat Widget Open/Close
     function toggleChat(forceState = null) {
         const isOpen = forceState !== null ? forceState : !chatPanel.classList.contains("open");
-        
+
         if (isOpen) {
             chatPanel.classList.add("open");
             document.querySelector(".trigger-open-icon").classList.add("hidden");
             document.querySelector(".trigger-close-icon").classList.remove("hidden");
             document.querySelector(".notification-badge").classList.add("hidden");
-            
+
             // Check if lead capture is required
             if (!isLeadSubmitted) {
                 leadFormOverlay.classList.remove("hidden");
@@ -122,15 +122,15 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const result = await response.json();
-            
+
             if (response.ok) {
                 isLeadSubmitted = true;
                 userData = { name, email, phone };
                 localStorage.setItem("alobook_lead_submitted", "true");
                 localStorage.setItem("alobook_user_data", JSON.stringify(userData));
-                
+
                 leadFormOverlay.classList.add("hidden");
-                
+
                 // Add a welcome bot message for the user
                 appendMessage("bot", `Cảm ơn anh/chị **${name}** đã cung cấp thông tin. Em đã sẵn sàng hỗ trợ anh/chị rồi ạ!`);
                 messageInput.focus();
@@ -149,16 +149,31 @@ document.addEventListener("DOMContentLoaded", () => {
         return now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
     }
 
+    function scrollToBottom() {
+        setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 50);
+    }
+
     function appendMessage(sender, text, customElement = null) {
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message", sender === "user" ? "user-message" : "bot-message");
 
         const contentDiv = document.createElement("div");
         contentDiv.classList.add("message-content");
-        
-        // Simple bold markdown replacement
-        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        formattedText = formattedText.replace(/\n/g, '<br>');
+
+        // Render using marked.js if available, fallback to basic replacement
+        let formattedText = text;
+        if (typeof marked !== "undefined" && typeof marked.parse === "function") {
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            formattedText = marked.parse(text);
+        } else {
+            formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formattedText = formattedText.replace(/\n/g, '<br>');
+        }
         contentDiv.innerHTML = formattedText;
 
         messageDiv.appendChild(contentDiv);
@@ -173,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.appendChild(timeSpan);
 
         chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollToBottom();
     }
 
     // Typing Indicator
@@ -184,14 +199,20 @@ document.addEventListener("DOMContentLoaded", () => {
         typingIndicatorElement = document.createElement("div");
         typingIndicatorElement.classList.add("typing-indicator", "message", "bot-message");
         typingIndicatorElement.innerHTML = `
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
+            <div class="typing-glow"></div>
+            <div class="typing-wave">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <span class="typing-text">AloBook AI đang xử lý...</span>
         `;
         chatMessages.appendChild(typingIndicatorElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollToBottom();
     }
 
+    // Remove typing indicator from chat stream
     function removeTypingIndicator() {
         if (typingIndicatorElement) {
             typingIndicatorElement.remove();
@@ -203,10 +224,10 @@ document.addEventListener("DOMContentLoaded", () => {
     function triggerRateLimit(seconds = 60) {
         rateLimitOverlay.classList.remove("hidden");
         rateLimitProgress.style.width = "0%";
-        
+
         let remaining = seconds;
         rateLimitMessage.innerText = `Bạn đã đạt giới hạn 10 tin nhắn/phút. Vui lòng đợi ${remaining} giây...`;
-        
+
         const interval = setInterval(() => {
             remaining--;
             if (remaining <= 0) {
@@ -220,16 +241,44 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 1000);
     }
 
-    // Send message to Backend
-    async function sendMessage(text) {
+    let messageBuffer = [];
+    let sendTimeout = null;
+
+    // Send message to Backend with debouncing (3 seconds delay) to aggregate multi-line typing
+    async function sendMessage(text, immediate = false) {
         if (!text.trim()) return;
 
+        // Render user message bubble immediately
         appendMessage("user", text);
         messageInput.value = "";
         sendBtn.disabled = true;
-
         showTypingIndicator();
 
+        if (immediate) {
+            // Send immediately
+            if (sendTimeout) clearTimeout(sendTimeout);
+
+            // If there's pending text in buffer, join it first
+            messageBuffer.push(text);
+            const combinedMessage = messageBuffer.join("\n");
+            messageBuffer = [];
+            await sendRequestToBackend(combinedMessage);
+        } else {
+            // Buffer the message
+            messageBuffer.push(text);
+
+            if (sendTimeout) clearTimeout(sendTimeout);
+
+            sendTimeout = setTimeout(async () => {
+                const combinedMessage = messageBuffer.join("\n");
+                messageBuffer = [];
+                await sendRequestToBackend(combinedMessage);
+            }, 3000); // 3 seconds debounce delay
+        }
+    }
+
+    // Actual API request execution
+    async function sendRequestToBackend(text) {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutes timeout
@@ -255,16 +304,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const data = await response.json();
-            
+
             if (response.ok) {
                 let customElement = null;
 
                 // Handle order structured card
-                if (text.toUpperCase().includes("AB") && data.reply.includes("Mã đơn hàng:")) {
-                    // It returned simulated order info, let's render standard order card!
-                    // Extract properties
+                if ((text.toUpperCase().includes("AB") || text.toUpperCase().includes("BM")) && data.reply.includes("Mã đơn hàng:")) {
                     const lines = data.reply.split("\n");
-                    const orderId = lines[0].split(": ")[1] || "AB";
+                    const orderId = lines[0].split(": ")[1] || "BM";
                     const status = lines[1].split(": ")[1] || "pending";
                     const customer = lines[2].split(": ")[1] || "";
                     const books = lines[3].split(": ")[1] || "";
@@ -336,17 +383,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         chatMessages.appendChild(btnContainer);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollToBottom();
     }
 
     // Handle Quick Action Actions
     function handleQuickAction(action) {
         if (action === "check_order") {
-            appendMessage("bot", "Vui lòng nhập mã đơn hàng của bạn để tra cứu (Ví dụ: **AB12345**):");
+            appendMessage("bot", "Vui lòng nhập mã đơn hàng của bạn để tra cứu (Ví dụ: **BM12345**):");
         } else if (action === "search_books") {
             appendMessage("bot", "Bạn đang muốn tìm sách thể loại gì? (Ví dụ: **đầu tư tài chính**, **kỹ năng sống**, **tâm lý học**...)");
         } else if (action === "escalate") {
-            sendMessage("Tôi muốn gặp nhân viên hỗ trợ trực tiếp.");
+            sendMessage("Tôi muốn gặp nhân viên hỗ trợ trực tiếp.", true);
         }
     }
 
@@ -390,7 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.addEventListener("click", () => {
             tabButtons.forEach(b => b.classList.remove("active"));
             helperDrawer.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-            
+
             btn.classList.add("active");
             const tabId = btn.dataset.tab;
             document.getElementById(tabId).classList.add("active");
@@ -400,7 +447,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Handle suggestion chip clicks
     helperDrawer.querySelectorAll(".prompt-chip").forEach(chip => {
         chip.addEventListener("click", () => {
-            sendMessage(chip.innerText);
+            sendMessage(chip.innerText, true);
             helperDrawer.classList.add("hidden");
         });
     });
@@ -410,7 +457,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             helperBookList.innerHTML = `<div style="padding:1rem; text-align:center; font-size:0.8rem; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải sách...</div>`;
             helperOrderList.innerHTML = `<div style="padding:1rem; text-align:center; font-size:0.8rem; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải đơn...</div>`;
-            
+
             const response = await fetch(`${API_BASE}/api/demo/data`);
             if (response.ok) {
                 const data = await response.json();
@@ -440,12 +487,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 <p style="font-size:0.68rem; margin-top:0.2rem; color:var(--text-muted)">${book.description}</p>
             </div>
         `).join("");
-        
+
         // Add click listener
         helperBookList.querySelectorAll(".helper-item").forEach(item => {
             item.addEventListener("click", () => {
                 const title = item.dataset.title;
-                sendMessage(`Cho tôi thông tin sách "${title}"`);
+                sendMessage(`Cho tôi thông tin sách "${title}"`, true);
                 helperDrawer.classList.add("hidden");
             });
         });
@@ -477,7 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
         helperOrderList.querySelectorAll(".helper-item").forEach(item => {
             item.addEventListener("click", () => {
                 const id = item.dataset.id;
-                sendMessage(`Tra cứu đơn hàng ${id}`);
+                sendMessage(`Tra cứu đơn hàng ${id}`, true);
                 helperDrawer.classList.add("hidden");
             });
         });
